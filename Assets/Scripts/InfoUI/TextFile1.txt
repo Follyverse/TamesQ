@@ -1,0 +1,227 @@
+﻿float AddLine(int y, int start, int indent, string indentString, out bool created, float width, out bool manualBreak, out int next)
+        {
+            manualBreak = false;
+            int i = start, r = start;
+            string s;
+            GameObject go;
+            RectTransform rect;
+            created = false;
+            //if(start < words.Count)
+            bool existing = text[start] != null;
+            float offset = (indent + 1) * lines[y].height;
+            float maxWidth = lines[y].width * portions[words[start].line];
+            float reoff = lines[y].width * (1 - portions[words[start].line]);
+            float spaceCount = text[start] == null ? 0 : 1;
+            float space = lines[y].height / 5;
+            float[] widths = new float[words.Count];
+            InfoChoice ic;
+            Image img;
+            Texture t;
+            lastAlignment = TextAlignmentOptions.Left;
+            float lastWidth = width, lastSize;
+            while (i < words.Count)
+            {
+                if (words[i].operation == WordOperation.Alignment)
+                {
+                    widths[i] = 0;
+                    lastAlignment = words[i].alignment;
+                }
+                Vector2 pvs;
+
+
+                Debug.Log($"word {i} op: {words[i].operation}, text: {words[i].text}, offset: {offset}, size: {words[i].size}, height: {textHeight}");
+                if (words[i].operation == WordOperation.NewLine) { r = i; manualBreak = true; break; }
+                s = words[i].text;
+
+                if (words[i].prop == InfoReference.RefProperty.Name)
+                    s = parent.references[words[i].index].MaxName();
+                else if (words[i].prop != InfoReference.RefProperty.None && words[i].prop != InfoReference.RefProperty.Image)
+                {
+                    s = words[i].index < 0 ? "888" : "" + parent.references[words[i].index].MaxLength();
+                }
+
+                if (words[i].prop == InfoReference.RefProperty.Image)
+                {
+                    //     Debug.Log("Image word " + i);
+                    if (inline[i] == null)
+                    {
+                        t = marker.inLineImages[words[i].index];
+                        if (t != null)
+                        {
+                            go = new GameObject("word " + i);
+                            inline[i] = go.AddComponent<Image>();
+                            //     Debug.Log("words " + i + " " + (t == null));
+                            inline[i].sprite = Sprite.Create((Texture2D)t, new(0, 0, t.width, t.height), Vector2.zero);
+                            sprites.Add(inline[i].sprite);
+                            words[i].texture = t;
+                        }
+                    }
+                    lastSize = textHeight * Mathf.Pow(1.2f, words[i].size - 2);
+                    //       Debug.Log("Image " + lastSize + " " + textHeight);
+                    spaceCount++;
+                    pvs = new Vector2(lastSize, words[i].texture == null ? lastSize : words[i].texture.width / (float)words[i].texture.height * lastSize);
+                }
+                else
+                {
+                    //   Debug.Log("here");
+                    if (text[i] == null)
+                    {
+                        go = new GameObject("word " + i);
+                        text[i] = go.AddComponent<TextMeshProUGUI>();
+
+                        text[i].fontSize = textHeight * Mathf.Pow(1.2f, words[i].size - 2);
+                        text[i].color = words[i].color;// (words[i].style & Highlight) == 0 ? marker.textColor : marker.textHighlight;
+                        text[i].fontStyle = words[i].style;
+                        text[i].text = s;
+                        ic = GetChoice(i);
+                        if (ic != null)
+                            ic.indexes.Add(i);
+                        //      Debug.Log($"here {i} {text[i].fontStyle}");
+                    }
+                    spaceCount++;
+                    pvs = text[i].GetPreferredValues();
+                    if (words[i].prop != InfoReference.RefProperty.None)
+                    {
+                        if (words[i].prop == InfoReference.RefProperty.Time)
+                        {
+                            text[i].text = (int)Tames.TameElement.ActiveTime + "";
+                            text[i].alignment = TextAlignmentOptions.Right;
+                        }
+                        else if (parent.references[words[i].index] != null)
+                        {
+                            text[i].text = parent.references[words[i].index].Get(words[i].prop);
+                            text[i].alignment = words[i].prop != InfoReference.RefProperty.Name ? TextAlignmentOptions.Right : TextAlignmentOptions.Left;
+                        }
+                    }
+                }
+
+                if (width + pvs.x + offset + space * (spaceCount - 1) > maxWidth)
+                {
+                    r = i;
+                    lastWidth = pvs.x;
+                    created = true;
+                    break;
+                }
+                else
+                {
+                    width += (existing && i == start) ? 0 : pvs.x;
+                    widths[i] = pvs.x;
+                    if (i == words.Count - 1) r = i + 1;
+                }
+                i++;
+            }
+
+            float x, xi;
+            //     Debug.Log($" start:{start}, r:{r}");
+            if (r > start)
+            {
+                x = lines[y].xMin;
+
+                switch (lastAlignment)
+                {
+                    case TextAlignmentOptions.Left: x = reoff; break;
+                    case TextAlignmentOptions.Right: x = lines[y].xMin + maxWidth - width - spaceCount * space - offset; break;
+                    case TextAlignmentOptions.Center: x = reoff / 2 + lines[y].xMin + (maxWidth - width - spaceCount * space - offset) / 2; break;
+                    default:
+                        x = reoff;
+                        space = (maxWidth - width - offset) / (spaceCount <= 1 ? 1 : spaceCount);
+                        break;
+                }
+                xi = x + indent * lines[y].height;
+                x += offset;
+                for (i = start; i < r; i++)
+                    if (text[i] != null || inline[i] != null)
+                    {
+                        float dif = Mathf.Pow(1.2f, words[i].size - 2) - 1;
+                        //      if (inline[i] != null) Debug.Log("InLine " + (text[i] == null));
+                        rect = text[i] != null ? text[i].GetComponent<RectTransform>() : inline[i].GetComponent<RectTransform>();
+                        rect.SetParent(rectTransform, false);
+                        rect.pivot = rect.anchorMin = rect.anchorMax = Vector2.zero;
+                        if (inline[i] != null)
+                            rect.sizeDelta = new Vector2(widths[i], widths[i] / words[i].texture.height * words[i].texture.width);
+                        else
+                            rect.sizeDelta = new Vector2(widths[i], lines[y].height);
+                        rect.anchoredPosition = new Vector2(x, main.height - lines[y].yMin - lines[y].height + dif * textHeight);
+                        //   rect.anchoredPosition3D = new Vector3(rect.anchoredPosition.x, rect.anchoredPosition.y, -0.01f);
+                        AddChild(rect, i, new(x, lines[y].yMin, lines[y].height));
+                        x += widths[i] + space;
+                        //     if (marker.name == "bargraph") Debug.Log("bar: " + s);
+                    }
+                i = start - 1;
+                if (indentString != "")
+                {
+                    float dif = Mathf.Pow(1.2f, words[i].size - 2) - 1;
+                    go = new GameObject("word " + i);
+                    text[i] = go.AddComponent<TextMeshProUGUI>();
+                    text[i].fontSize = textHeight;
+                    text[i].color = words[i].color;
+                    text[i].fontStyle = words[i].style;
+                    text[i].text = indentString;
+                    rect = text[i].GetComponent<RectTransform>();
+                    rect.SetParent(rectTransform, false);
+                    rect.pivot = rect.anchorMin = rect.anchorMax = Vector2.zero;
+                    rect.sizeDelta = new Vector2(width, lines[y].height);
+                    rect.anchoredPosition = new Vector2(xi, main.height - lines[y].yMin - lines[y].height + dif * textHeight);
+                    //   rect.anchoredPosition3D = new Vector3(rect.anchoredPosition.x, rect.anchoredPosition.y, -0.01f);
+                    AddChild(rect, i, new(xi, lines[y].yMin, lines[y].height));
+                }
+            }
+            next = r;
+            return lastWidth;
+        }
+         void CreateText()
+        {
+            text = new TextMeshProUGUI[words.Count];
+            textBack = new Image[words.Count];
+            inline = new Image[words.Count];
+            for (int i = 0; i < words.Count; i++)
+            { text[i] = null; inline[i] = null; }
+            int y = 0;
+            if (lines.Length == 0) return;
+            int[] order = new int[4];
+            int lastIndent = -1, indent = -1;
+            for (int i = 0; i < order.Length; i++)
+                order[i] = 0;
+            int w = 0;
+            float lastTextWidth = 0;
+            string indentString = "";
+            while (w < words.Count)
+            {
+                float ltw = AddLine(y, w, indent, indentString, out bool created, lastTextWidth, out bool manualBreak, out int next);
+                if (created)
+                    lastTextWidth = ltw;
+                if (manualBreak) lastTextWidth = 0;
+                y++;
+                Debug.Log($"line break to {y} words {next} and manual = {manualBreak}");
+                w = next + (manualBreak ? 1 : 0);
+                if (y >= lines.Length || w >= words.Count)
+                    break;
+                if (words[w].operation == WordOperation.Indent)
+                {
+                    indent = words[w].index;
+                    if (lastIndent == indent)
+                        order[indent]++;
+                    else
+                    {
+                        for (int j = indent + 1; j < order.Length; j++)
+                            order[j] = 1;
+
+                        if (lastIndent > indent)
+                            order[indent]++;
+                        else
+                            order[indent] = 1;
+                        lastIndent = indent;
+                    }
+                    indentString = BulletText(order[indent], words[w].bullet);
+                    w++;
+                }
+                else
+                {
+                    indentString = "";
+                    if (manualBreak) lastIndent = indent = -1;
+                }
+            }
+            //   Debug.Log("valid count = " + validWordCount + " > " + marker.gameObject.name);
+        }
+
+
