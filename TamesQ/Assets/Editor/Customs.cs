@@ -110,7 +110,7 @@ class MarkerSettingsEditor : Editor
     {
         autoSaveMode = serializedObject.FindProperty("autoSaveMode");
         navMode = serializedObject.FindProperty("navMode");
-         replay = serializedObject.FindProperty("replay");
+        replay = serializedObject.FindProperty("replay");
         eyeHeights = serializedObject.FindProperty("eyeHeights");
         email = serializedObject.FindProperty("email");
         subject = serializedObject.FindProperty("subject");
@@ -121,7 +121,7 @@ class MarkerSettingsEditor : Editor
         serializedObject.Update();
         EditorGUILayout.PropertyField(autoSaveMode);
         EditorGUILayout.PropertyField(navMode);
-         EditorGUILayout.PropertyField(replay);
+        EditorGUILayout.PropertyField(replay);
         EditorGUILayout.PropertyField(eyeHeights);
         EditorGUILayout.PropertyField(email);
         EditorGUILayout.PropertyField(subject);
@@ -481,7 +481,7 @@ public class EIntro : Editor
         selected = serializedObject.FindProperty("selected");
         lineCount = serializedObject.FindProperty("lineCount");
         items = serializedObject.FindProperty("items");
-      }
+    }
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -540,8 +540,9 @@ public class Sending : PropertyDrawer
         var byLabel = new Rect(position.x + (total += w + 5), position.y, w = 70, position.height);
         var byRect = new Rect(position.x + (total += w + 5), position.y, w = 40, position.height);
 
-
-        EditorGUI.LabelField(position, property.name);
+        string n = property.name;
+        n = n.ToUpper()[0] + n.Substring(1);
+        EditorGUI.LabelField(position, n);
         EditorGUI.PropertyField(asIsRect, property.FindPropertyRelative("on"), GUIContent.none);
         EditorGUI.LabelField(byLabel, "Interval (s):");
         EditorGUI.PropertyField(byRect, property.FindPropertyRelative("interval"), GUIContent.none);
@@ -675,7 +676,7 @@ public class ProjectDataEditor : Editor
         minutes = serializedObject.FindProperty("minutes");
         includeIP = serializedObject.FindProperty("includeIP");
         progress = serializedObject.FindProperty("progress");
-        choice = serializedObject.FindProperty("choice");
+        choice = serializedObject.FindProperty("alters");
         location = serializedObject.FindProperty("location");
         surveys = serializedObject.FindProperty("surveys");
         elements = serializedObject.FindProperty("elements");
@@ -697,7 +698,7 @@ public class ProjectDataEditor : Editor
             tp.RegisterProject(false);
         if (GUILayout.Button("Request Results"))
             tp.RequestResults();
-                EditorGUILayout.PropertyField(includeIP);
+        EditorGUILayout.PropertyField(includeIP);
         EditorGUILayout.PropertyField(progress);
         EditorGUILayout.PropertyField(choice);
         EditorGUILayout.PropertyField(surveys);

@@ -16,7 +16,7 @@ public class ProjectData : MonoBehaviour
 
     public bool includeIP = false;
     public StateSender progress;
-    public StateSender choice;
+    public StateSender alters;
     public StateSender surveys;
     public StateSender location;
     public GameObject[] elements;
@@ -25,7 +25,7 @@ public class ProjectData : MonoBehaviour
     private List<Quaternion> rotation = new List<Quaternion>();
     private List<float> time = new List<float>();
     private List<TameElement> tames = new List<TameElement>();
-    private List<TameAlternative> alters = new List<TameAlternative>();
+    private List<TameAlternative> alterables = new List<TameAlternative>();
     private List<InfoUI.QFrame> frames = new List<InfoUI.QFrame>();
     private float lastTime = -1f;
     int count = 0;
@@ -35,7 +35,7 @@ public class ProjectData : MonoBehaviour
     {
         Debug.Log("sent: ?");
         float f = progress.on ? progress.interval : 10000;
-        f = choice.on ? Mathf.Min(f, choice.interval) : f;
+        f = alters.on ? Mathf.Min(f, alters.interval) : f;
         f = surveys.on ? Mathf.Min(f, surveys.interval) : f;
         f = location.on ? Mathf.Min(f, location.interval) : f;
         TNet.Message msg = new Multi.TNet.Message() { messageId = state ? TNet.Project : TNet.Unreg, ints = new int[] { minutes, (int)f, includeIP?1:0 }, strings = new string[] { title, token }, };
@@ -115,7 +115,7 @@ public class ProjectData : MonoBehaviour
                 TameAlternative ta = TameManager.altering.Find(x => x.qMarker.gameObject == g);
                 if (ta != null)
                 {
-                    alters.Add(ta);
+                    alterables.Add(ta);
                     headers[2] += (headers[2].Length > 0 ? "," : "") + ta.name;
                 }
                 else
@@ -123,7 +123,7 @@ public class ProjectData : MonoBehaviour
                     ta = TameManager.alteringMaterial.Find(x => x.qMarker.gameObject == g);
                     if (ta != null)
                     {
-                        alters.Add(ta);
+                        alterables.Add(ta);
                         headers[2] += (headers[2].Length > 0 ? "," : "") + ta.name;
                     }
                 }
@@ -195,10 +195,10 @@ public class ProjectData : MonoBehaviour
     void CheckChoices(float t)
     {
         bool shouldSend = false;
-        if (choice.CheckTime(lastTime, t))
+        if (alters.CheckTime(lastTime, t))
             shouldSend = true;
         else
-            foreach (TameAlternative ta in alters)
+            foreach (TameAlternative ta in alterables)
                 if (!ta.changeRecorded)
                     if (t - ta.lastChanged > 2)
                     {
@@ -208,7 +208,7 @@ public class ProjectData : MonoBehaviour
         if (shouldSend)
         {
             string s = "";
-            foreach (TameAlternative ta in alters)
+            foreach (TameAlternative ta in alterables)
             {
                 ta.changeRecorded = true;
                 ta.lastChanged = t;
