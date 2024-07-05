@@ -546,7 +546,8 @@ namespace Tames
                 progress.interactDirection = dir;
                 progress.SetByTime(deltaTime);
             }
-            return dir != 0;
+            else progress.Retain(0);
+			return dir != 0;
         }
         /// <summary>
         /// updates the current element based on passage of time. 
