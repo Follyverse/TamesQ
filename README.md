@@ -7,5 +7,5 @@ https://www.youtube.com/@Follyverse
 The current UI text formatting is discussed in the Quick Guide:
 https://github.com/Follyverse/TamesManual/blob/main/InfoFrame%20Guide.pdf
 
-If you have questions, please contact me on peiman.aminibehbahani@uon.edu.au
+If you have questions, please contact me on peiman.amini@outlook.com
  
